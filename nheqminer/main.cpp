@@ -100,13 +100,6 @@ void print_opencl_info() {
 void init_logging(boost::log::core_ptr cptr, int level);
 #else
 #include <iostream>
-
-
-namespace logging = boost::log;
-namespace sinks = boost::log::sinks;
-namespace src = boost::log::sources;
-namespace attrs = boost::log::attributes;
-namespace keywords = boost::log::keywords;
 #endif
 
 
