@@ -14,7 +14,6 @@
 #include <thread>
 #include <chrono>
 #include <boost/thread/exceptions.hpp>
-#include <boost/log/trivial.hpp>
 #include <boost/circular_buffer.hpp>
 #include "speed.hpp"
 
@@ -28,7 +27,7 @@
 typedef uint32_t eh_index;
 
 
-#define BOOST_LOG_CUSTOM(sev, pos) BOOST_LOG_TRIVIAL(sev) << "miner#" << pos << " | "
+#define BOOST_LOG_CUSTOM(sev, pos) std::cout // BOOST_LOG_TRIVIAL(sev) << "miner#" << pos << " | "
 
 
 void CompressArray(const unsigned char* in, size_t in_len,
@@ -200,7 +199,7 @@ void static ZcashMinerThread(ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>* mi
 
 				std::function<void(const std::vector<uint32_t>&, size_t, const unsigned char*)> solutionFound =
 					[&actualHeader, &bNonce, &actualTarget, &miner, pos, &actualJobId, &actualTime, &actualNonce1size]
-				(const std::vector<uint32_t>& index_vector, size_t cbitlen, const unsigned char* compressed_sol) 
+				(const std::vector<uint32_t>& index_vector, size_t cbitlen, const unsigned char* compressed_sol)
 				{
 					actualHeader.nNonce = bNonce;
 					if (compressed_sol)
@@ -244,7 +243,7 @@ void static ZcashMinerThread(ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>* mi
 					solutionFound,
 					hashDone,
 					extra);
-				
+
                 // Check for stop
 				if (!miner->minerThreadActive[pos])
 					throw boost::thread_interrupted();
@@ -311,7 +310,7 @@ void ZcashJob::setTarget(std::string target)
     if (target.size() > 0) {
         serverTarget = UintToArith256(uint256S(target));
     } else {
-		BOOST_LOG_TRIVIAL(debug) << "miner | New job but no server target, assuming powLimit";
+		// BOOST_LOG_TRIVIAL(debug) << "miner | New job but no server target, assuming powLimit";
 		serverTarget = UintToArith256(uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"));
     }
 }
@@ -334,7 +333,7 @@ std::string ZcashJob::getSubmission(const EquihashSolution* solution)
 }
 
 template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::ZcashMiner(int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t, 
+ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::ZcashMiner(int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
 	int opencl_count, int opencl_platf, int* opencl_en)
     : minerThreads{nullptr}
 {
@@ -490,7 +489,7 @@ template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
 void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::setServerNonce(const std::string& n1str)
 {
     //auto n1str = params[1].get_str();
-	BOOST_LOG_TRIVIAL(info) << "miner | Extranonce is " << n1str;
+	std::cout << "miner | Extranonce is " << n1str;
     std::vector<unsigned char> nonceData(ParseHex(n1str));
     while (nonceData.size() < 32) {
         nonceData.push_back(0);
@@ -621,7 +620,7 @@ bool benchmark_solve_equihash(const CBlock& pblock, const char *tequihash_header
 	benchmark_nonces.erase(benchmark_nonces.begin());
 	benchmark_work.unlock();
 
-	BOOST_LOG_TRIVIAL(debug) << "Testing, nonce = " << nonce->ToString();
+	// BOOST_LOG_TRIVIAL(debug) << "Testing, nonce = " << nonce->ToString();
 
 	std::function<void(const std::vector<uint32_t>&, size_t, const unsigned char*)> solutionFound =
 		[&pblock, &nonce]
@@ -639,7 +638,7 @@ bool benchmark_solve_equihash(const CBlock& pblock, const char *tequihash_header
 		else
 			hdr.nSolution = GetMinimalFromIndices(index_vector, cbitlen);
 
-		BOOST_LOG_TRIVIAL(debug) << "Solution found, header = " << hdr.GetHash().ToString();
+		// BOOST_LOG_TRIVIAL(debug) << "Solution found, header = " << hdr.GetHash().ToString();
 
 		++benchmark_solutions;
 	};
@@ -661,7 +660,7 @@ bool benchmark_solve_equihash(const CBlock& pblock, const char *tequihash_header
 template <typename Solver>
 int benchmark_thread(int tid, Solver& extra)
 {
-	BOOST_LOG_TRIVIAL(debug) << "Thread #" << tid << " started (" << extra.getname() << ")";
+	// BOOST_LOG_TRIVIAL(debug) << "Thread #" << tid << " started (" << extra.getname() << ")";
 
 	try
 	{
@@ -677,12 +676,12 @@ int benchmark_thread(int tid, Solver& extra)
 	}
 	catch (const std::runtime_error &e)
 	{
-		BOOST_LOG_TRIVIAL(error) << e.what();
+		std::cout << e.what();
 		exit(0);
 		return 0;
 	}
 
-	BOOST_LOG_TRIVIAL(debug) << "Thread #" << tid << " ended (" << extra.getname() << ")";
+	// BOOST_LOG_TRIVIAL(debug) << "Thread #" << tid << " ended (" << extra.getname() << ")";
 
 	return 0;
 }
@@ -717,7 +716,7 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 		if (cuda_t[i] > 0)
 			context->threadsperblock = cuda_t[i];
 
-		BOOST_LOG_TRIVIAL(info) << "Benchmarking CUDA worker (" << context->getname() << ") " << context->getdevinfo();
+		// BOOST_LOG_TRIVIAL(info) << "Benchmarking CUDA worker (" << context->getname() << ") " << context->getdevinfo();
 
 		CUDASolver::start(*context); // init CUDA before to get more accurate benchmark
 
@@ -730,7 +729,7 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 
 		// todo: save local&global work size
 
-		BOOST_LOG_TRIVIAL(info) << "Benchmarking OPENCL worker (" << context->getname() << ") " << context->getdevinfo();
+		// BOOST_LOG_TRIVIAL(info) << "Benchmarking OPENCL worker (" << context->getname() << ") " << context->getdevinfo();
 
 		OPENCLSolver::start(*context); // init OPENCL before to get more accurate benchmark
 
@@ -748,7 +747,7 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 	{
 		CPUSolver* context = new CPUSolver();
 		context->use_opt = use_avx2;
-		BOOST_LOG_TRIVIAL(info) << "Benchmarking CPU worker (" << context->getname() << ") " << context->getdevinfo();
+		// BOOST_LOG_TRIVIAL(info) << "Benchmarking CPU worker (" << context->getname() << ") " << context->getdevinfo();
 		CPUSolver::start(*context);
 		cpu_contexts.push_back(context);
 	}
@@ -757,7 +756,7 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 
 	std::thread* bthreads = new std::thread[nThreads];
 
-	BOOST_LOG_TRIVIAL(info) << "Benchmark starting... this may take several minutes, please wait...";
+	// BOOST_LOG_TRIVIAL(info) << "Benchmark starting... this may take several minutes, please wait...";
 
 	auto start = std::chrono::high_resolution_clock::now();
 
@@ -799,12 +798,12 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 	cuda_contexts.clear();
 	opencl_contexts.clear();
 
-	BOOST_LOG_TRIVIAL(info) << "Benchmark done!";
-	BOOST_LOG_TRIVIAL(info) << "Total time : " << msec << " ms";
-	BOOST_LOG_TRIVIAL(info) << "Total iterations: " << hashes_done;
-	BOOST_LOG_TRIVIAL(info) << "Total solutions found: " << benchmark_solutions;
-	BOOST_LOG_TRIVIAL(info) << "Speed: " << ((double)hashes_done * 1000 / (double)msec) << " I/s";
-	BOOST_LOG_TRIVIAL(info) << "Speed: " << ((double)benchmark_solutions * 1000 / (double)msec) << " Sols/s";
+	// BOOST_LOG_TRIVIAL(info) << "Benchmark done!";
+	// BOOST_LOG_TRIVIAL(info) << "Total time : " << msec << " ms";
+	// BOOST_LOG_TRIVIAL(info) << "Total iterations: " << hashes_done;
+	// BOOST_LOG_TRIVIAL(info) << "Total solutions found: " << benchmark_solutions;
+	// BOOST_LOG_TRIVIAL(info) << "Speed: " << ((double)hashes_done * 1000 / (double)msec) << " I/s";
+	// BOOST_LOG_TRIVIAL(info) << "Speed: " << ((double)benchmark_solutions * 1000 / (double)msec) << " Sols/s";
 }
 
 

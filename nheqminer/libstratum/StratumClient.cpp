@@ -18,7 +18,7 @@ using namespace json_spirit;
 
 #include <boost/log/trivial.hpp>
 
-#define BOOST_LOG_CUSTOM(sev) BOOST_LOG_TRIVIAL(sev) << "stratum | "
+#define BOOST_LOG_CUSTOM(sev) std::cout // BOOST_LOG_TRIVIAL(sev) << "stratum | "
 
 
 template <typename Miner, typename Job, typename Solution>
@@ -81,7 +81,7 @@ template <typename Miner, typename Job, typename Solution>
 void StratumClient<Miner, Job, Solution>::workLoop()
 {
 	if (!p_miner->isMining()) {
-		BOOST_LOG_CUSTOM(info) << "Starting miner";
+		std::cout << "Starting miner";
 		p_miner->start();
 	}
 
@@ -127,7 +127,7 @@ void StratumClient<Miner, Job, Solution>::workLoop()
 template <typename Miner, typename Job, typename Solution>
 void StratumClient<Miner, Job, Solution>::connect()
 {
-	BOOST_LOG_CUSTOM(info) << "Connecting to stratum server " << p_active->host << ":" << p_active->port;
+	std::cout << "Connecting to stratum server " << p_active->host << ":" << p_active->port;
 
     tcp::resolver r(*m_io_service);
     tcp::resolver::query q(p_active->host, p_active->port);
@@ -144,7 +144,7 @@ void StratumClient<Miner, Job, Solution>::connect()
 			p_active->host << ":" << p_active->port << ", " << error.message();
         reconnect();
     } else {
-		BOOST_LOG_CUSTOM(info) << "Connected!";
+		std::cout << "Connected!";
         m_connected = true;
 		std::stringstream ss;
 		ss << "{\"id\":1,\"method\":\"mining.subscribe\",\"params\":[\""
@@ -165,7 +165,7 @@ template <typename Miner, typename Job, typename Solution>
 void StratumClient<Miner, Job, Solution>::reconnect()
 {
 	/*if (p_miner->isMining()) {
-		BOOST_LOG_CUSTOM(info) << "Stopping miner";
+		std::cout << "Stopping miner";
 		p_miner->stop();
 	}*/
 	p_miner->setJob(nullptr);
@@ -196,7 +196,7 @@ void StratumClient<Miner, Job, Solution>::reconnect()
         }
     }
 
-	BOOST_LOG_CUSTOM(info) << "Reconnecting in 3 seconds...";
+	std::cout << "Reconnecting in 3 seconds...";
     boost::asio::deadline_timer timer(*m_io_service, boost::posix_time::seconds(3));
     timer.wait();
 }
@@ -205,11 +205,11 @@ template <typename Miner, typename Job, typename Solution>
 void StratumClient<Miner, Job, Solution>::disconnect()
 {
     if (!m_connected) return;
-	BOOST_LOG_CUSTOM(info) << "Disconnecting";
+	std::cout << "Disconnecting";
     m_connected = false;
     m_running = false;
     if (p_miner->isMining()) {
-		BOOST_LOG_CUSTOM(info) << "Stopping miner";
+		std::cout << "Stopping miner";
         p_miner->stop();
     }
     m_socket.close();
@@ -262,11 +262,11 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
 				{
 					if (!workOrder->clean)
 					{
-						BOOST_LOG_CUSTOM(info) << CL_CYN "Ignoring non-clean job #" << workOrder->jobId() << CL_N;;
+						std::cout << CL_CYN "Ignoring non-clean job #" << workOrder->jobId() << CL_N;;
 						break;
 					}
 
-					BOOST_LOG_CUSTOM(info) << CL_CYN "Received new job #" << workOrder->jobId() << CL_N;
+					std::cout << CL_CYN "Received new job #" << workOrder->jobId() << CL_N;
 					workOrder->setTarget(m_nextJobTarget);
 
 					if (!(p_current && *workOrder == *p_current)) {
@@ -293,7 +293,7 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
 			if (valParams.type() == array_type) {
 				const Array& params = valParams.get_array();
 				m_nextJobTarget = params[0].get_str();
-				BOOST_LOG_CUSTOM(info) << CL_MAG "Target set to " << m_nextJobTarget << CL_N;
+				std::cout << CL_MAG "Target set to " << m_nextJobTarget << CL_N;
 			}
 		}
 		else if (method == "mining.set_extranonce") {
@@ -312,7 +312,7 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
 					p_active->port = params[1].get_str();
 				}
 				// TODO: Handle wait time
-				BOOST_LOG_CUSTOM(info) << "Reconnection requested";
+				std::cout << "Reconnection requested";
 				reconnect();
 			}
 		}
@@ -321,7 +321,7 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
     case 1:
         valRes = find_value(responseObject, "result");
         if (valRes.type() == array_type) {
-			BOOST_LOG_CUSTOM(info) << "Subscribed to stratum server";
+			std::cout << "Subscribed to stratum server";
 			const Array& result = valRes.get_array();
             // Ignore session ID for now.
             p_miner->setServerNonce(result[1].get_str());
@@ -345,7 +345,7 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
 			disconnect();
 			return;
 		}
-		BOOST_LOG_CUSTOM(info) << "Authorized worker " << p_active->user;
+		std::cout << "Authorized worker " << p_active->user;
 
 		ss << "{\"id\":3,\"method\":\"mining.extranonce.subscribe\",\"params\":[]}\n";
 		std::string sss = ss.str();
@@ -364,7 +364,7 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
             accepted = valRes.get_bool();
         }
         if (accepted) {
-			BOOST_LOG_CUSTOM(info) << CL_GRN "Accepted share #" << id << CL_N;
+			std::cout << CL_GRN "Accepted share #" << id << CL_N;
             p_miner->acceptedSolution(m_stale);
         } else {
 			valRes = find_value(responseObject, "error");
@@ -379,7 +379,7 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
             p_miner->rejectedSolution(m_stale);
         }
         break;
-    
+
     }
 }
 
@@ -397,7 +397,7 @@ template <typename Miner, typename Job, typename Solution>
 bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution, const std::string& jobid)
 {
 	int id = std::atomic_fetch_add(&m_share_id, 1);
-	BOOST_LOG_CUSTOM(info) << "Submitting share #" << id << ", nonce " << solution->toString().substr(0, 64 - solution->nonce1size);
+	std::cout << "Submitting share #" << id << ", nonce " << solution->toString().substr(0, 64 - solution->nonce1size);
 
 	CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
 	ss << solution->nonce;
@@ -423,4 +423,3 @@ bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution, const
 
 template class StratumClient<ZMinerAVX, ZcashJob, EquihashSolution>;
 template class StratumClient<ZMinerSSE2, ZcashJob, EquihashSolution>;
-

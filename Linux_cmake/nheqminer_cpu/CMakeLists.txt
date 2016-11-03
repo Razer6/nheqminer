@@ -21,7 +21,7 @@ include_directories(${nheqminer_SOURCE_DIR})
 add_definitions(-DBOOST_ALL_NO_LIB -DBOOST_ALL_DYN_LINK -DBOOST_LOG_DYN_LINK)
 
 find_package(Threads REQUIRED COMPONENTS)
-find_package(Boost REQUIRED COMPONENTS system log_setup log date_time filesystem thread)
+find_package(Boost REQUIRED COMPONENTS system date_time filesystem thread)
 
 if (Boost_FOUND)
   # From the offical documentation:

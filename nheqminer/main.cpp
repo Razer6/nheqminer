@@ -11,8 +11,6 @@
 #include <chrono>
 #include <atomic>
 #include <bitset>
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
 
 #include "speed.hpp"
 #include "api.hpp"
@@ -35,8 +33,8 @@ int use_avx2 = 0;
 static ZcashStratumClientAVX* scSigAVX = nullptr;
 static ZcashStratumClientSSE2* scSigSSE2 = nullptr;
 
-extern "C" void stratum_sigint_handler(int signum) 
-{ 
+extern "C" void stratum_sigint_handler(int signum)
+{
     if (scSigAVX) scSigAVX->disconnect();
     if (scSigSSE2) scSigSSE2->disconnect();
 }
@@ -103,14 +101,6 @@ void init_logging(boost::log::core_ptr cptr, int level);
 #else
 #include <iostream>
 
-#include <boost/log/core/core.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/utility/setup/console.hpp>
-#include <boost/log/attributes.hpp>
-#include <boost/log/support/date_time.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 namespace logging = boost::log;
 namespace sinks = boost::log::sinks;
@@ -199,11 +189,11 @@ void start_mining(int api_port, int cpu_threads, int cuda_device_count, int open
 		{
 			double allshares = speed.GetShareSpeed() * 60;
 			double accepted = speed.GetShareOKSpeed() * 60;
-			BOOST_LOG_TRIVIAL(info) << CL_YLW "Speed [" << INTERVAL_SECONDS << " sec]: " <<
+			std::cout << CL_YLW "Speed [" << INTERVAL_SECONDS << " sec]: " <<
 				speed.GetHashSpeed() << " I/s, " <<
 				speed.GetSolutionSpeed() << " Sols/s" <<
-				//accepted << " AS/min, " << 
-				//(allshares - accepted) << " RS/min" 
+				//accepted << " AS/min, " <<
+				//(allshares - accepted) << " RS/min"
 				CL_N;
 		}
 		if (api) while (api->poll()) {}
@@ -381,28 +371,9 @@ int main(int argc, char* argv[])
 	else
 		detect_AVX_and_AVX2();
 
-#ifdef WIN32
-    init_logging(boost::log::core::get(), log_level);
-#else
-    std::cout << "Setting log level to " << log_level << std::endl;
-    boost::log::add_console_log(
-        std::clog,
-        boost::log::keywords::auto_flush = true,
-        boost::log::keywords::filter = boost::log::trivial::severity >= log_level,
-        boost::log::keywords::format = (
-        boost::log::expressions::stream
-            << "[" << boost::log::expressions::format_date_time<boost::posix_time::ptime>("TimeStamp", "%H:%M:%S")
-            << "][" << boost::log::expressions::attr<boost::log::attributes::current_thread_id::value_type>("ThreadID")
-            << "] "  << boost::log::expressions::smessage
-        )
-    );
-    boost::log::core::get()->add_global_attribute("TimeStamp", boost::log::attributes::local_clock());
-    boost::log::core::get()->add_global_attribute("ThreadID", boost::log::attributes::current_thread_id());
-#endif
-
-	BOOST_LOG_TRIVIAL(info) << "Using SSE2: YES";
-	BOOST_LOG_TRIVIAL(info) << "Using AVX: " << (use_avx ? "YES" : "NO");
-	BOOST_LOG_TRIVIAL(info) << "Using AVX2: " << (use_avx2 ? "YES" : "NO");
+	std::cout << "Using SSE2: YES";
+	std::cout << "Using AVX: " << (use_avx ? "YES" : "NO");
+	std::cout << "Using AVX2: " << (use_avx2 ? "YES" : "NO");
 
 	try
 	{
@@ -410,7 +381,7 @@ int main(int argc, char* argv[])
 		{
 			if (user.length() == 0)
 			{
-				BOOST_LOG_TRIVIAL(error) << "Invalid address. Use -u to specify your address.";
+				std::cout << "Invalid address. Use -u to specify your address.";
 				return 0;
 			}
 
@@ -435,11 +406,10 @@ int main(int argc, char* argv[])
 	}
 	catch (std::runtime_error& er)
 	{
-		BOOST_LOG_TRIVIAL(error) << er.what();
+		std::cout << er.what();
 	}
 
-	boost::log::core::get()->remove_all_sinks();
+	// boost::log::core::get()->remove_all_sinks();
 
 	return 0;
 }
-

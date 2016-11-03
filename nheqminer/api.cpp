@@ -3,9 +3,8 @@
 #include <mutex>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
-#include <boost/log/trivial.hpp>
 
-#define BOOST_LOG_CUSTOM(sev) BOOST_LOG_TRIVIAL(sev) << "api | "
+#define BOOST_LOG_CUSTOM(sev) std::cout // BOOST_LOG_TRIVIAL(sev) << "api | "
 
 #include "api.hpp"
 #include "speed.hpp"
